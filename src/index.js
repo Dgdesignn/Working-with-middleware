@@ -10,19 +10,58 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+
+  const {username} = request.headers;
+  const user = users.find(user=>user.username === username);
+  if(!user)return response.status(404).json({error:"User not found!"})
+  request.user = user;
+  next()
+
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+    
+      const {user} = request;
+      if(user.todos.length>=10 && !user.pro)return response.status(403).json({error:'Maximum number (10) of todos reached subscribe to the pro plan'})
+      next()
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const {username} = request.headers;
+  const {id} =  request.params;
+  const isValidId = validate(id);
+  
+  //validate username
+  const user = users.find(user=>user.username === username);
+  if(!user)return response.status(404).json({error:"User not found!"})
+ 
+  //verify if the user id is uuid
+  if(!isValidId)return response.status(400).json({error:"Id not valid!"});
+  
+  const todo = user.todos.find(todo=>todo.id === id)
+  if(!todo)return response.status(404).json({error:"Todo id no founded!"});
+
+
+  request.user = user
+  request.todo = todo
+
+  next()
+
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const {id} = request.params;
+  const isValidId = validate(id);
+ 
+  //verify if the user id is uuid
+  if(!isValidId)return response.status(404).json({error:"Id not valid!"});
+  
+  //verify if user id exist
+  const user = users.find(user=>user.id === id);
+  if(!user)return response.status(404).json({error:"User id not found!"})
+  //if user id exist it return the user
+  request.user = user;
+  next()
 }
 
 app.post('/users', (request, response) => {
@@ -52,6 +91,7 @@ app.get('/users/:id', findUserById, (request, response) => {
 
   return response.json(user);
 });
+
 
 app.patch('/users/:id/pro', findUserById, (request, response) => {
   const { user } = request;
